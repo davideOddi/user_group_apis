@@ -1,36 +1,62 @@
-import express, { Request, Response, Router, NextFunction } from 'express';
-import { verifyId } from '../common';
+import express, { Request, Response, Router } from 'express';
+import { verifyId, validateGroup } from '../common/validator';
+import {
+    getGroups,
+    getGroup,
+    deleteGroup,
+    updateGroup,
+    createGroup
+} from '../services/groupService'
 
 const router: Router = express.Router();
 router.param('id', verifyId)
 router.use(express.json());
 
-router.get('/', (req: Request, res: Response) => {
-    console.log('group list');
-    res.send('requested group list');
+router.get('/', async (req: Request, res: Response) => {
+    console.log(`Retrieving groups list`);
+    const groupList = await getGroups();
+    res.status(200).json(groupList);
 });
 
 router
     .route('/:id')
-    .get((req: Request, res: Response) => {
-        const id: string = req.params.id;
+    .get(async (req: Request, res: Response) => {
+        const id = parseInt(req.params.id);
         console.log(`getting group by id:${id}`);
-        res.send(`requested group by id:${id}`);
+        const group = await getGroup(id);
+        if (group) {
+            res.status(200).json(group);
+        } else {
+            res.status(404).json({ message: `Group with ID ${id} not found.` });
+        }
     })
-    .delete((req: Request, res: Response) => {
-        const id: string = req.params.id;
+    .delete(async(req: Request, res: Response) => {
+        const id = parseInt(req.params.id);
         console.log(`deleting group by id:${id}`);
-        res.send(`deleting group by id:${id}`);
+        
+        const group = await deleteGroup(id);
+        if (group) {
+            res.status(200).json(group);
+        } else {
+            res.status(404).json({ message: `Group with ID ${id} not found.` });
+        }
     })
-    .put((req: Request, res: Response) => {
-        const id: string = req.params.id;
+    .put(validateGroup, async(req: Request, res: Response) => {
+        const id = parseInt(req.params.id);
         console.log(`updating group by id:${id}`);
-        res.send(`updating group by id:${id}`);
+  
+        const updatedgroup = await updateGroup(req.body, id);
+        if (updatedgroup) {
+            res.status(200).json(updatedgroup);
+        } else {
+            res.status(404).json({ message: `Group with ID ${id} not found.` });
+        }
     });
 
-router.post('/', (req: Request, res: Response) => {
-        console.log('requested create group');
-        res.send('requested create group');
+router.post('/', validateGroup, async(req: Request, res: Response) => {
+    console.log('creating group');
+    const createdGroup = await createGroup(req.body);
+    res.status(201).json(createdGroup);
 });
 
 export default router;

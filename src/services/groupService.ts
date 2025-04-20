@@ -2,35 +2,38 @@ import { Group } from '../data_layer/models';
 import { pool } from '../data_layer/database';
 import { ResultSetHeader, RowDataPacket } from 'mysql2';
 
-export function getGroups(): Promise<Group[]> {
+export async function getGroups(): Promise<Group[]> {
     return selectGroups();
 }
 
-export function getGroup(id: number): Promise<Group | null> {
+export async function getGroup(id: number): Promise<Group | null> {
     return selectGroupById(id);
 }
 
 export async function createGroup(group: Group): Promise<Group | null> {
-    console.log('qui')
-    console.log(group)
     const groupId = await insertGroup(group);
-    return selectGroupById(groupId);
+    return await selectGroupById(groupId);
 }
 
 export async function updateGroup(group: Group, id: number): Promise<Group | null> {
     const affectedRows = await modifyGroup(id, group);
     if (affectedRows > 0) {
-        return selectGroupById(id);
+        return await selectGroupById(id);
     }
     return null;
 }
 
 export async function deleteGroup(id: number): Promise<Group | null> {
-    const groupToDelete = selectGroupById(id);
+    const groupToDelete = await selectGroupById(id);
     if (groupToDelete != null && await deleteGroupById(id)) {
+        await deleteGroupByUserGroup(id);
         return groupToDelete;
     }
     return null;
+}
+
+export async function getGroupsByUser(userId: number): Promise<Group[]> {
+    return selectGroupsByUser(userId);
 }
 
 async function selectGroups(): Promise<Group[]> {
@@ -62,4 +65,19 @@ async function deleteGroupById(id: number): Promise<boolean> {
         [id]
     );
     return result.affectedRows > 0;
+}
+
+async function deleteGroupByUserGroup(id: number): Promise<boolean> {
+    const [result] = await pool.execute<ResultSetHeader>(
+        'DELETE FROM `user_group` WHERE group_id  = ?',
+        [id]
+    );
+    return result.affectedRows > 0;
+}
+
+async function selectGroupsByUser(userId: number): Promise<Group[]> {
+    const [groups] = await pool.execute<RowDataPacket[]>(
+        'SELECT g.* FROM  `groups` g INNER JOIN user_group ug ON g.id = ug.group_id WHERE ug.user_id = ?',
+        [userId]);
+    return groups as Group[];
 }

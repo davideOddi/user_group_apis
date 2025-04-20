@@ -2,22 +2,17 @@ import { User } from '../data_layer/models';
 import { pool } from '../data_layer/database';
 import { ResultSetHeader, RowDataPacket } from 'mysql2';
 
-export function getUsers(limit: number, page: number): Promise<User[]> {
+export async function getUsers(limit: number, page: number): Promise<User[]> {
     return selectUsers(limit, page);
 }
 
-export function getUser(id: number): Promise<User | null> {
+export async function getUser(id: number): Promise<User | null> {
     return selectUserById(id);
 }
 
 export async function createUser(user: User): Promise<User | null> {
     const userId = await insertUser(user);
     return selectUserById(userId);
-}
-
-async function selectUsers(limit: number, page: number): Promise<User[]> {
-    const [users] = await pool.query<RowDataPacket[]>('SELECT * FROM users LIMIT ? OFFSET ?', [limit, page]);
-    return users as User[];
 }
 
 export async function updateUser(user: User, id: number): Promise<User | null> {
@@ -29,11 +24,24 @@ export async function updateUser(user: User, id: number): Promise<User | null> {
 }
 
 export async function deleteUser(id: number): Promise<User | null> {
-    const userToDelete = selectUserById(id);
+    const userToDelete = await selectUserById(id);
     if (userToDelete != null && await deleteUserById(id)) {
+        await removeUserFromUserGroup(id);
         return userToDelete;
     }
     return null;
+}
+
+export async function addGroup(userId: number, groupId: number) : Promise<void> {
+    await insertUserGroup(userId, groupId)
+}
+
+export async function removeGroup(userId: number, groupId: number) : Promise<void> {
+    await removeUserGroup(userId, groupId)
+}
+
+export async function getUsersByGroup(groupId: number): Promise<User[]>{
+    return await selectUsersByGroup(groupId);
 }
 
 async function selectUserById(id: number): Promise<User | null> {
@@ -54,11 +62,55 @@ async function modifyUser(id: number, user: Omit<User, 'id'>): Promise<number> {
     return result.affectedRows;
 }
 
-export async function deleteUserById(id: number): Promise<boolean> {
+async function deleteUserById(id: number): Promise<boolean> {
     const [result] = await pool.execute<ResultSetHeader>(
         'DELETE FROM users WHERE id = ?',
         [id]
     );
     return result.affectedRows > 0;
 }
+
+async function selectUsers(limit: number, page: number): Promise<User[]> {
+    const offset = (page - 1) * limit
+    const [users] = await pool.query<RowDataPacket[]>(
+        'SELECT * FROM users LIMIT ? OFFSET ?',
+        [limit, offset]);
+    return users as User[];
+}
+
+async function insertUserGroup(userId: number, groupId: number): Promise<void> {
+    await pool.query<ResultSetHeader>(
+        'INSERT INTO user_group (user_id, group_id) VALUES (?, ?)',
+        [userId, groupId]
+    );
+}
+
+async function removeUserGroup(userId: number, groupId: number): Promise<boolean> {
+    const [result] = await pool.execute<ResultSetHeader>(
+        'DELETE FROM user_group WHERE user_id = ? AND group_id = ?',
+        [userId, groupId]
+    );
+    return result.affectedRows > 0;
+}
+
+async function removeUserFromUserGroup(userId: number): Promise<boolean> {
+    const [result] = await pool.execute<ResultSetHeader>(
+        'DELETE FROM user_group WHERE user_id = ?',
+        [userId]
+    );
+    return result.affectedRows > 0;
+}
+
+async function selectUsersByGroup(groupId: number): Promise<User[]> {
+    const [users] = await pool.query<RowDataPacket[]>(
+        `SELECT u.* FROM users u INNER JOIN user_group ug
+         ON u.id = ug.user_id WHERE ug.group_id = ?`,
+        [groupId]
+    );
+
+    return users as User[];
+}
+
+
+
 

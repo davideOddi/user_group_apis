@@ -5,8 +5,9 @@ import {
     getGroup,
     deleteGroup,
     updateGroup,
-    createGroup
-} from '../services/groupService'
+    createGroup,
+    getGroupsByUser
+} from '../services/groupService';
 
 const router: Router = express.Router();
 router.param('id', verifyId)
@@ -18,10 +19,18 @@ router.get('/', async (req: Request, res: Response) => {
     res.status(200).json(groupList);
 });
 
+router.get('/user/:id', async (req: Request, res: Response) => {
+    const groupId = parseInt(req.params.id);
+    console.log(`Getting users by group id: ${groupId}`);
+    const groupList = await getGroupsByUser(groupId);
+    res.status(200).json(groupList);
+});
+
+
 router
     .route('/:id')
-    .get(async (req: Request, res: Response) => {
-        const id = parseInt(req.params.id);
+    .get(async(req: Request, res: Response) => {
+        const id = Number(req.params.id);
         console.log(`getting group by id:${id}`);
         const group = await getGroup(id);
         if (group) {

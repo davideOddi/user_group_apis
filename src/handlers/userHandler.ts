@@ -5,7 +5,10 @@ import {
     deleteUser,
     updateUser,
     createUser,
-    getUsers
+    getUsers,
+    addGroup,
+    removeGroup,
+    getUsersByGroup
 } from '../services/userService';
 
 const router: Router = express.Router();
@@ -39,8 +42,7 @@ router.route('/:id')
         } else {
             res.status(404).json({ message: `User with ID ${id} not found.` });
         }
-    }
-    )
+    })
     .delete(async(req: Request, res: Response) => {
         const id = parseInt(req.params.id);
         console.log(`Deleting user with id: ${id}`);
@@ -51,8 +53,7 @@ router.route('/:id')
         } else {
             res.status(404).json({ message: `User with ID ${id} not found.` });
         }
-    }
-    )
+    })
     .put(validateUser, async(req: Request, res: Response) => {
         const id = parseInt(req.params.id);
         console.log(`Updating user with id: ${id}`);
@@ -63,7 +64,27 @@ router.route('/:id')
         }else{
             res.status(404).json({ message: `User with ID ${id} not found.` });
         }
-    }
-    );
+    });
+
+router.get('/group/:id', async (req: Request, res: Response) => {
+    const groupId = parseInt(req.params.id);
+    console.log(`Getting groups for user id: ${groupId}`);
+    const userList = await getUsersByGroup(groupId);
+    res.status(200).json(userList);
+});
+    
+router.route('/group')
+    .post(async(req: Request, res: Response) => {
+        const { groupId, userId } = req.body;
+        console.log(`associating group with id: ${groupId} to user with id ${userId}`);
+        addGroup(userId, groupId);
+        res.status(201);
+    })
+    .delete(async(req: Request, res: Response) => {
+        const { groupId, userId } = req.body;
+        console.log(`disassociating  group with id: ${groupId} to user with id ${userId}`);
+        removeGroup(userId, groupId);
+        res.status(204);
+    })
 
 export default router;

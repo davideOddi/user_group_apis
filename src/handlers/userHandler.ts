@@ -20,7 +20,6 @@ router.get('/', (async (req: Request, res: Response) => {
     const limit = parseInt(req.query.limit as string, 10) || 10;
     const page = parseInt(req.query.page as string, 10) || 1;
     console.log(`Retrieving users - page ${page}, limit ${limit}`);
-
     const users = await getUsers(limit, page);
     res.status(200).json(users);
 }));

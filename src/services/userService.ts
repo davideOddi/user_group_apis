@@ -54,7 +54,7 @@ async function selectUserById(id: number): Promise<User | null> {
 }
 
 async function insertUser(user: User): Promise<number> {
-    const [result] = await pool.execute<ResultSetHeader>('INSERT INTO users SET ?', [user]);
+    const [result] = await pool.query<ResultSetHeader>('INSERT INTO users SET ?', [user]);
     return result.insertId;
 }
 
@@ -75,10 +75,11 @@ async function deleteUserById(id: number): Promise<boolean> {
 }
 
 async function selectUsers(limit: number, page: number): Promise<User[]> {
-    const offset = (page - 1) * limit
-    const [users] = await pool.execute<RowDataPacket[]>(
+    const offset = (page - 1) * limit;
+    const [users] = await pool.query<RowDataPacket[]>(
         'SELECT * FROM users LIMIT ? OFFSET ?',
         [limit, offset]);
+    console.log(users)
     return users as User[];
 }
 

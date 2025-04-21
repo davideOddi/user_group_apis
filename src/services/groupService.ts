@@ -47,7 +47,7 @@ async function selectGroupById(id: number): Promise<Group | null> {
 }
 
 async function insertGroup(group: Group): Promise<number> {
-    const [result] = await pool.execute<ResultSetHeader>('INSERT INTO `groups` SET ?', [group]);
+    const [result] = await pool.query<ResultSetHeader>('INSERT INTO `groups` SET ?', [group]);
     return result.insertId;
 }
 

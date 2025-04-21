@@ -1,0 +1,75 @@
+### Get all users (paginated)
+GET http://localhost:3000/users?limit=10&page=1
+
+### Create a new user
+POST http://localhost:3000/users
+Content-Type: application/json
+
+{
+  "name": "Mario",
+  "surname": "Rossini",
+  "birth_date": "1990-01-01",
+  "sex": "male"
+}
+
+### Get a user by ID
+GET http://localhost:3000/users/1
+
+### Update a user by ID
+PUT http://localhost:3000/users/22
+Content-Type: application/json
+
+{
+  "name": "Luigi",
+  "surname": "Verdini",
+  "birth_date": "1985-05-10",
+  "sex": "other"
+}
+
+### Delete a user by ID
+DELETE http://localhost:3000/users/1
+
+### Get users by group ID
+GET http://localhost:3000/users/group/2
+
+### Associate user with group
+POST http://localhost:3000/users/group
+Content-Type: application/json
+
+{
+  "userId": 1,
+  "groupId": 2
+}
+
+### Disassociate user from group
+DELETE http://localhost:3000/users/1/groups/2
+
+---
+
+### Get all groups
+GET http://localhost:3000/groups
+
+### Create a new group
+POST http://localhost:3000/groups
+Content-Type: application/json
+
+{
+  "name": "Admin Group"
+}
+
+### Get group by ID
+GET http://localhost:3000/groups/1
+
+### Update group by ID
+PUT http://localhost:3000/groups/1
+Content-Type: application/json
+
+{
+  "name": "Updated Admin Group"
+}
+
+### Delete group by ID
+DELETE http://localhost:3000/groups/1
+
+### Get groups by user ID
+GET http://localhost:3000/groups/user/1

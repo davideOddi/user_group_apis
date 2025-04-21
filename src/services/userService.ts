@@ -12,7 +12,7 @@ export async function getUser(id: number): Promise<User | null> {
 
 export async function createUser(user: User): Promise<User | null> {
     const userId = await insertUser(user);
-    return selectUserById(userId);
+    return selectUserById(userId) || null;
 }
 
 export async function updateUser(user: User, id: number): Promise<User | null> {
@@ -45,8 +45,12 @@ export async function getUsersByGroup(groupId: number): Promise<User[]>{
 }
 
 async function selectUserById(id: number): Promise<User | null> {
-    const [users] = await pool.execute<RowDataPacket[]>('SELECT * FROM users WHERE id = ?', [id]);
-    return users[0] as User || null;
+    const result = await pool.execute<RowDataPacket[]>('SELECT * FROM users WHERE id = ?', [id]);    
+    if (!result || !result[0]) {
+        return null;
+    }
+    const users = result[0];
+    return users.length === 0 ? null : users[0] as User;
 }
 
 async function insertUser(user: User): Promise<number> {

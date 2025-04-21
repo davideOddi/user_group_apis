@@ -103,8 +103,7 @@ async function removeUserFromUserGroup(userId: number): Promise<boolean> {
 
 async function selectUsersByGroup(groupId: number): Promise<User[]> {
     const [users] = await pool.execute<RowDataPacket[]>(
-        `SELECT u.* FROM users u INNER JOIN user_group ug
-         ON u.id = ug.user_id WHERE ug.group_id = ?`,
+        `SELECT u.* FROM users u INNER JOIN user_group ug ON u.id = ug.user_id WHERE ug.group_id = ?`,
         [groupId]
     );
 

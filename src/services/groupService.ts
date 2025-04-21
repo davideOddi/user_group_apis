@@ -37,7 +37,7 @@ export async function getGroupsByUser(userId: number): Promise<Group[]> {
 }
 
 async function selectGroups(): Promise<Group[]> {
-    const [groups] = await pool.query<RowDataPacket[]>('SELECT * FROM `groups`');
+    const [groups] = await pool.execute<RowDataPacket[]>('SELECT * FROM `groups`');
     return groups as Group[];
 }
 
@@ -47,12 +47,12 @@ async function selectGroupById(id: number): Promise<Group | null> {
 }
 
 async function insertGroup(group: Group): Promise<number> {
-    const [result] = await pool.query<ResultSetHeader>('INSERT INTO `groups` SET ?', [group]);
+    const [result] = await pool.execute<ResultSetHeader>('INSERT INTO `groups` SET ?', [group]);
     return result.insertId;
 }
 
 async function modifyGroup(id: number, group: Omit<Group, 'id'>): Promise<number> {
-    const [result] = await pool.query<ResultSetHeader>(
+    const [result] = await pool.execute<ResultSetHeader>(
         'UPDATE `groups` SET name = ? WHERE id = ?',
         [group.name, id]
     );

@@ -50,12 +50,12 @@ async function selectUserById(id: number): Promise<User | null> {
 }
 
 async function insertUser(user: User): Promise<number> {
-    const [result] = await pool.query<ResultSetHeader>('INSERT INTO users SET ?', [user]);
+    const [result] = await pool.execute<ResultSetHeader>('INSERT INTO users SET ?', [user]);
     return result.insertId;
 }
 
 async function modifyUser(id: number, user: Omit<User, 'id'>): Promise<number> {
-    const [result] = await pool.query<ResultSetHeader>(
+    const [result] = await pool.execute<ResultSetHeader>(
         'UPDATE users SET name = ?, surname = ?, birth_date = ?, sex = ? WHERE id = ?',
         [user.name, user.surname, user.birth_date.toISOString().split('T')[0], user.sex, id]
     );
@@ -72,14 +72,14 @@ async function deleteUserById(id: number): Promise<boolean> {
 
 async function selectUsers(limit: number, page: number): Promise<User[]> {
     const offset = (page - 1) * limit
-    const [users] = await pool.query<RowDataPacket[]>(
+    const [users] = await pool.execute<RowDataPacket[]>(
         'SELECT * FROM users LIMIT ? OFFSET ?',
         [limit, offset]);
     return users as User[];
 }
 
 async function insertUserGroup(userId: number, groupId: number): Promise<void> {
-    await pool.query<ResultSetHeader>(
+    await pool.execute<ResultSetHeader>(
         'INSERT INTO user_group (user_id, group_id) VALUES (?, ?)',
         [userId, groupId]
     );
@@ -102,7 +102,7 @@ async function removeUserFromUserGroup(userId: number): Promise<boolean> {
 }
 
 async function selectUsersByGroup(groupId: number): Promise<User[]> {
-    const [users] = await pool.query<RowDataPacket[]>(
+    const [users] = await pool.execute<RowDataPacket[]>(
         `SELECT u.* FROM users u INNER JOIN user_group ug
          ON u.id = ug.user_id WHERE ug.group_id = ?`,
         [groupId]

@@ -1,109 +1,104 @@
-import * as groupService from '../services/groupService';
 import { pool } from '../data_layer/database';
+import * as groupService from './groupService';
+import { Group } from '../data_layer/models';
 
 jest.mock('../data_layer/database', () => ({
-    pool: {
-        execute: jest.fn()
-    }
+  pool: {
+    query: jest.fn(),
+    execute: jest.fn(),
+  },
 }));
 
-const mockedExecute = pool.execute as jest.Mock;
-
 describe('GroupService', () => {
-    afterEach(() => {
-        jest.clearAllMocks();
-    });
+  let mockedQuery: jest.Mock;
+  let mockedExecute: jest.Mock;
 
-    describe('getGroups', () => {
-        it('should return list of groups', async () => {
-            const mockGroup = [{ id: 1, name: 'Group1' }];
-            mockedExecute.mockResolvedValueOnce([mockGroup]);
+  beforeEach(() => {
+    mockedQuery = pool.query as jest.Mock;
+    mockedExecute = pool.execute as jest.Mock;
+    jest.clearAllMocks();
+  });
 
-            const result = await groupService.getGroup(1);
-            expect(result).toEqual(mockGroup[0]);
-        });
-    });
+  it('should return all groups', async () => {
+    const mockGroups: Group[] = [{ id: 1, name: 'Admin' }, { id: 2, name: 'User' }];
 
-    describe('getGroup', () => {
-        it('should return a group if exists', async () => {
-            const mockGroup = [{ id: 1, name: 'Group1' }];
+    mockedExecute.mockResolvedValueOnce([mockGroups]);
 
-            mockedExecute.mockResolvedValueOnce([mockGroup]);
+    const result = await groupService.getGroups();
+    expect(result).toEqual(mockGroups);
+  });
 
-            const result = await groupService.getGroup(1);
-            expect(result).toEqual(mockGroup[0]);
-        });
+  it('should return a group by ID', async () => {
+    const mockGroup: Group = { id: 1, name: 'Admin' };
 
-        it('should return null if group does not exist', async () => {
-            mockedExecute.mockResolvedValueOnce([[]]);
+    mockedExecute.mockResolvedValueOnce([[mockGroup]]);
 
-            const result = await groupService.getGroup(999);
-            expect(result).toBeNull();
-        });
-    });
+    const result = await groupService.getGroup(1);
+    expect(result).toEqual(mockGroup);
+  });
 
-    describe('createGroup', () => {
-        it('should insert and return new group', async () => {
-            const newGroup = { name: 'New Group' };
-            mockedExecute
-                .mockResolvedValueOnce([{ insertId: 2 }])
-                .mockResolvedValueOnce([[{ id: 2, name: 'New Group' }]]);
+  it('should return null if group does not exist', async () => {
+    mockedExecute.mockResolvedValueOnce([[]]);
 
-            const result = await groupService.createGroup(newGroup as any);
-            expect(result).toEqual({ id: 2, name: 'New Group' });
-        });
-    });
+    const result = await groupService.getGroup(999);
+    expect(result).toBeNull();
+  });
 
-    describe('updateGroup', () => {
-        it('should update and return updated group', async () => {
-            const updatedGroup = { name: 'Updated Name' };
-            mockedExecute
-                .mockResolvedValueOnce([{ affectedRows: 1 }])
-                .mockResolvedValueOnce([[{ id: 1, name: 'Updated Name' }]]);
+  it('should create and return new group', async () => {
+    const newGroup: Group = { id: 0, name: 'Developers' };
+    const insertedGroup: Group = { id: 3, name: 'Developers' };
 
-            const result = await groupService.updateGroup(updatedGroup as any, 1);
-            expect(result).toEqual({ id: 1, name: 'Updated Name' });
-        });
+    mockedQuery.mockResolvedValueOnce([{ insertId: 3 }]);
+    mockedExecute.mockResolvedValueOnce([[insertedGroup]]);
 
-        it('should return null if no rows affected', async () => {
-            mockedExecute.mockResolvedValueOnce([{ affectedRows: 0 }]);
+    const result = await groupService.createGroup(newGroup);
+    expect(result).toEqual(insertedGroup);
+  });
 
-            const result = await groupService.updateGroup({ name: 'Fail' } as any, 999);
-            expect(result).toBeNull();
-        });
-    });
+  it('should update and return group if update is successful', async () => {
+    const groupToUpdate: Group = { id: 1, name: 'Updated Group' };
 
-    describe('deleteGroup', () => {
-        it('should delete and return group if exists', async () => {
-            const groupToDelete = [{ id: 1, name: 'ToDelete' }];
-            mockedExecute
-                .mockResolvedValueOnce([groupToDelete])              // selectGroupById
-                .mockResolvedValueOnce([{ affectedRows: 1 }])        // deleteGroupById
-                .mockResolvedValueOnce([{ affectedRows: 1 }]);       // deleteGroupByUserGroup
+    mockedExecute.mockResolvedValueOnce([{ affectedRows: 1 }]); // update
+    mockedExecute.mockResolvedValueOnce([[groupToUpdate]]);     // select after update
 
-            const result = await groupService.deleteGroup(1);
-            expect(result).toEqual(groupToDelete[0]);
-        });
+    const result = await groupService.updateGroup(groupToUpdate, 1);
+    expect(result).toEqual(groupToUpdate);
+  });
 
-        it('should return null if group does not exist', async () => {
-            mockedExecute.mockResolvedValueOnce([[]]);
+  it('should return null if update affects no rows', async () => {
+    const groupToUpdate: Group = { id: 999, name: 'Ghost Group' };
 
-            const result = await groupService.deleteGroup(999);
-            expect(result).toBeNull();
-        });
-    });
+    mockedExecute.mockResolvedValueOnce([{ affectedRows: 0 }]);
 
-    describe('getGroupsByUser', () => {
-        it('should return groups for a user', async () => {
-            const mockGroups = [{ id: 1, name: 'Group1' }];
-            mockedExecute.mockResolvedValueOnce([mockGroups]); // GIUSTO
-        
-            const result = await groupService.getGroupsByUser(1);
-            expect(result).toEqual(mockGroups);
-            expect(mockedExecute).toHaveBeenCalledWith(
-                'SELECT g.* FROM  `groups` g INNER JOIN user_group ug ON g.id = ug.group_id WHERE ug.user_id = ?',
-                [1]
-            );
-        });
-    });
+    const result = await groupService.updateGroup(groupToUpdate, 999);
+    expect(result).toBeNull();
+  });
+
+  it('should delete and return group if exists', async () => {
+    const mockGroup: Group = { id: 1, name: 'ToDelete' };
+
+    mockedExecute
+      .mockResolvedValueOnce([[mockGroup]])          // selectGroupById
+      .mockResolvedValueOnce([{ affectedRows: 1 }])  // deleteGroupById
+      .mockResolvedValueOnce([{ affectedRows: 1 }]); // deleteGroupByUserGroup
+
+    const result = await groupService.deleteGroup(1);
+    expect(result).toEqual(mockGroup);
+  });
+
+  it('should return null if group does not exist when deleting', async () => {
+    mockedExecute.mockResolvedValueOnce([[]]);
+
+    const result = await groupService.deleteGroup(999);
+    expect(result).toBeNull();
+  });
+
+  it('should return groups by user ID', async () => {
+    const mockGroups: Group[] = [{ id: 1, name: 'Admin' }];
+
+    mockedExecute.mockResolvedValueOnce([mockGroups]);
+
+    const result = await groupService.getGroupsByUser(1);
+    expect(result).toEqual(mockGroups);
+  });
 });

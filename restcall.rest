@@ -37,12 +37,12 @@ POST http://localhost:3000/users/group
 Content-Type: application/json
 
 {
-  "userId": 1,
-  "groupId": 2
+  "userId": 22,
+  "groupId": 1
 }
 
 ### Disassociate user from group
-DELETE http://localhost:3000/users/1/groups/2
+DELETE http://localhost:3000/users/22/groups/1
 
 ---
 
@@ -58,10 +58,10 @@ Content-Type: application/json
 }
 
 ### Get group by ID
-GET http://localhost:3000/groups/1
+GET http://localhost:3000/groups/11
 
 ### Update group by ID
-PUT http://localhost:3000/groups/1
+PUT http://localhost:3000/groups/11
 Content-Type: application/json
 
 {
@@ -69,7 +69,7 @@ Content-Type: application/json
 }
 
 ### Delete group by ID
-DELETE http://localhost:3000/groups/1
+DELETE http://localhost:3000/groups/11
 
 ### Get groups by user ID
 GET http://localhost:3000/groups/user/1

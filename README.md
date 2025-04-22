@@ -20,12 +20,13 @@ create .env file
     MYSQL_DB='[]'
     MYSQL_PORT=[]
 
-npm run build
-npm run test
-npm run start
+
+- npm run build
+- npm run test
+- npm run start
 
 all requests:
-    restcall.rest
+    - restcall.rest
 
 ### Clone the repository
 
